@@ -1,25 +1,27 @@
-const { onRequest } = require("firebase-functions/v2/https");
-const { logger } = require("firebase-functions");
-const { defineSecret } = require("firebase-functions/params");
+const express = require("express");
+const cors = require("cors");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
 
-// Inicializa o Admin SDK
+// Inicializa o Admin SDK (Usa Application Default Credentials no Google Cloud)
 admin.initializeApp();
 
-// Define os segredos (Secrets) que serão configurados via CLI
-const emailUser = defineSecret("EMAIL_USER");
-const emailPass = defineSecret("EMAIL_PASS");
+const app = express();
+
+// Middlewares
+app.use(cors({ origin: true }));
+app.use(express.json());
 
 /**
- * Função para enviar e-mail de contato e salvar no Firestore
+ * Endpoint para receber o contato, salvar no Firestore e enviar por email
  */
-exports.sendContactEmail = onRequest({
-    cors: true,
-    secrets: [emailUser, emailPass]
-}, async (req, res) => {
-    if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
+app.post("/sendContactEmail", async (req, res) => {
+    const EMAIL_USER = process.env.EMAIL_USER;
+    const EMAIL_PASS = process.env.EMAIL_PASS;
+
+    if (!EMAIL_USER || !EMAIL_PASS) {
+        console.error("Missing EMAIL_USER or EMAIL_PASS environment variables.");
+        return res.status(500).send({ success: false, error: "Erro de configuração no servidor." });
     }
 
     const { name, email, phone, message } = req.body;
@@ -29,7 +31,7 @@ exports.sendContactEmail = onRequest({
     }
 
     try {
-        // 1. Salvar no Firestore (Uso do Admin SDK moderno)
+        // 1. Salvar no Firestore
         const contactData = {
             name,
             email,
@@ -40,20 +42,20 @@ exports.sendContactEmail = onRequest({
         };
 
         await admin.firestore("ladepage-dataf").collection("contacts").add(contactData);
-        logger.info("Contato salvo no Firestore com sucesso.");
+        console.log("Contato salvo no Firestore com sucesso.");
 
-        // 2. Configurar o transportador de e-mail usando os Secrets
+        // 2. Configurar o transportador de e-mail usando variáveis de ambiente
         const transporter = nodemailer.createTransport({
             service: "gmail",
             auth: {
-                user: emailUser.value(),
-                pass: emailPass.value(),
+                user: EMAIL_USER,
+                pass: EMAIL_PASS,
             },
         });
 
         const mailOptions = {
-            from: `"Data Frontier Landpage" <${emailUser.value()}>`,
-            to: emailUser.value(),
+            from: `"Data Frontier Landpage" <${EMAIL_USER}>`,
+            to: EMAIL_USER,
             subject: `Novo Contato: ${name}`,
             html: `
                 <h3>Novo contato via Landpage</h3>
@@ -75,10 +77,16 @@ exports.sendContactEmail = onRequest({
         });
 
     } catch (error) {
-        logger.error("Erro no processamento do contato:", error);
+        console.error("Erro no processamento do contato:", error);
         return res.status(500).send({
             success: false,
             error: "Erro interno. Por favor, tente novamente mais tarde."
         });
     }
+});
+
+// Cloud Run requires listening on process.env.PORT, default to 8080
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+    console.log(`Contacts API listening on port ${port}`);
 });

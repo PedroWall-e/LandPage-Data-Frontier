@@ -124,8 +124,10 @@ export default function App() {
     setStatus({ type: '', message: '' });
 
     try {
-      // Nota: O link da sua função após o deploy será:
-      const response = await fetch('https://us-central1-data-frontier-landpage.cloudfunctions.net/sendContactEmail', {
+      // Usa variável de ambiente do Vite no lugar da URL chumbada da Cloud Function
+      // No Cloud Storage (produção), você configurará essa variável durante o build.
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/sendContactEmail`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

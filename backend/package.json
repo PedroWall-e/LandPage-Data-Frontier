@@ -1,0 +1,19 @@
+{
+    "name": "data-frontier-backend",
+    "description": "API Backend for Data Frontier",
+    "scripts": {
+        "start": "node index.js",
+        "dev": "node --watch index.js"
+    },
+    "engines": {
+        "node": "22"
+    },
+    "main": "index.js",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^4.21.0",
+        "firebase-admin": "^13.0.0",
+        "nodemailer": "^6.9.13"
+    },
+    "private": true
+}
