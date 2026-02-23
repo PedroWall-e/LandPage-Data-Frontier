@@ -42,13 +42,36 @@ O projeto foi desenvolvido utilizando tecnologias modernas para garantir rapidez
    npm run build
    ```
 
-## 🌐 Deploy
+## 🌐 Deploy Automático (GitHub Actions)
 
-O deploy é realizado através do **Firebase Hosting**. Para publicar atualizações:
+Este projeto está configurado para deploy automático no **Firebase Hosting**. Sempre que você fizer um `push` para a branch `main`, o GitHub Actions irá:
+1. Instalar as dependências.
+2. Gerar a pasta `dist` (build).
+3. Fazer o upload para o Firebase.
+
+### Configuração Necessária (Segurança)
+Para que o backend funcione com segurança máxima (Secret Manager), você deve configurar as credenciais de e-mail via Firebase CLI:
 
 ```bash
-firebase deploy
+# Definir o e-mail que enviará as mensagens
+firebase functions:secrets:set EMAIL_USER
+
+# Definir a senha (ou senha de app do Gmail)
+firebase functions:secrets:set EMAIL_PASS
 ```
+
+Também é necessário configurar um segredo no seu repositório GitHub para o deploy automático:
+- Nome: `FIREBASE_SERVICE_ACCOUNT_DATA_FRONTIER_LANDING_PAGE`
+- Valor: O conteúdo da sua chave JSON da conta de serviço do Firebase.
+
+## 🗄️ Banco de Dados (Firestore)
+As mensagens agora são salvas automaticamente no banco de dados Firestore (ID: `ladepage-dataf`) na coleção `contacts` antes do e-mail ser enviado. Isso garante redundância e um histórico acessível no console do Firebase.
+
+## 📂 Estrutura de Arquivos (Diferença entre index)
+
+- **`index.html` (raiz)**: O arquivo fonte onde você faz as alterações de design. Este arquivo DEVE ser enviado para o GitHub.
+- **`dist/index.html`**: Gerado automaticamente pelo comando `npm run build`. Este arquivo NÃO deve ir para o GitHub (está no `.gitignore`).
+- **`functions/index.js`**: O código do seu backend. Este arquivo DEVE ser enviado para o GitHub.
 
 ---
 

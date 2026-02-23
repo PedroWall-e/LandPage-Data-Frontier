@@ -1,26 +1,23 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
-const cors = require("cors")({ origin: true });
 
+// Inicializa o Admin SDK
 admin.initializeApp();
 
-// Configuração do transportador de e-mail (Exemplo com Gmail)
-// IMPORTANTE: Use variáveis de ambiente do Firebase (Secrets ou Config)
-// Neste exemplo, usamos a configuração clássica para compatibilidade rápida
-// Recomenda-se usar Secrets para senhas no futuro.
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        // Note: Em 2nd Gen, as variáveis de config clássicas ainda funcionam
-        // Mas é melhor definir explicitamente ou usar fallback.
-        user: process.env.EMAIL_USER || "seu-email@gmail.com",
-        pass: process.env.EMAIL_PASS || "sua-senha-de-app",
-    },
-});
+// Define os segredos (Secrets) que serão configurados via CLI
+const emailUser = defineSecret("EMAIL_USER");
+const emailPass = defineSecret("EMAIL_PASS");
 
-exports.sendContactEmail = onRequest({ cors: true }, async (req, res) => {
+/**
+ * Função para enviar e-mail de contato e salvar no Firestore
+ */
+exports.sendContactEmail = onRequest({
+    cors: true,
+    secrets: [emailUser, emailPass]
+}, async (req, res) => {
     if (req.method !== "POST") {
         return res.status(405).send("Method Not Allowed");
     }
@@ -28,27 +25,60 @@ exports.sendContactEmail = onRequest({ cors: true }, async (req, res) => {
     const { name, email, phone, message } = req.body;
 
     if (!name || !email) {
-        return res.status(400).send("Faltam dados obrigatórios.");
+        return res.status(400).send("Faltam dados obrigatórios (nome e email).");
     }
 
-    const mailOptions = {
-        from: '"Data Frontier Landpage" <contato@datafrontier.com.br>',
-        to: process.env.EMAIL_USER || "seu-email@gmail.com",
-        subject: `Novo Contato: ${name}`,
-        html: `
-      <h3>Novo contato via Landpage</h3>
-      <p><strong>Nome:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Telefone:</strong> ${phone}</p>
-      <p><strong>Mensagem:</strong> ${message || "Sem mensagem"}</p>
-    `,
-    };
-
     try {
+        // 1. Salvar no Firestore (Uso do Admin SDK moderno)
+        const contactData = {
+            name,
+            email,
+            phone: phone || "Não informado",
+            message: message || "Sem mensagem",
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            status: "new"
+        };
+
+        await admin.firestore("ladepage-dataf").collection("contacts").add(contactData);
+        logger.info("Contato salvo no Firestore com sucesso.");
+
+        // 2. Configurar o transportador de e-mail usando os Secrets
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: emailUser.value(),
+                pass: emailPass.value(),
+            },
+        });
+
+        const mailOptions = {
+            from: `"Data Frontier Landpage" <${emailUser.value()}>`,
+            to: emailUser.value(),
+            subject: `Novo Contato: ${name}`,
+            html: `
+                <h3>Novo contato via Landpage</h3>
+                <p><strong>Nome:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Telefone:</strong> ${phone}</p>
+                <p><strong>Mensagem:</strong> ${message || "Sem mensagem"}</p>
+                <hr>
+                <p><em>Este dado também foi registrado no seu Banco de Dados (Firestore).</em></p>
+            `,
+        };
+
+        // 3. Enviar o e-mail
         await transporter.sendMail(mailOptions);
-        return res.status(200).send({ success: true, message: "E-mail enviado com sucesso!" });
+
+        return res.status(200).send({
+            success: true,
+            message: "Sua mensagem foi recebida e registrada com sucesso!"
+        });
+
     } catch (error) {
-        logger.error("Erro ao enviar e-mail:", error);
-        return res.status(500).send({ success: false, error: error.toString() });
+        logger.error("Erro no processamento do contato:", error);
+        return res.status(500).send({
+            success: false,
+            error: "Erro interno. Por favor, tente novamente mais tarde."
+        });
     }
 });
