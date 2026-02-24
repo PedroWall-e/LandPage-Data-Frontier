@@ -1,0 +1,22 @@
+steps:
+  # 1. Instalar dependências do frontend
+  - name: 'node:22-alpine'
+    dir: 'frontend'
+    entrypoint: 'npm'
+    args: ['install']
+
+  # 2. Fazer o build do Vite injetando a URL da sua API do Cloud Run
+  - name: 'node:22-alpine'
+    dir: 'frontend'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        export VITE_API_URL=https://landpage-data-frontier-591324475631.europe-west1.run.app
+        npm run build
+
+  # 3. Sincronizar (enviar) a pasta dist gerada para o seu Bucket no Cloud Storage
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    dir: 'frontend/dist'
+    entrypoint: 'gsutil'
+    args: ['-m', 'rsync', '-R', '.', 'gs://landpage-datafrontier']
