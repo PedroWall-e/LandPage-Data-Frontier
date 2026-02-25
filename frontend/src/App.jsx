@@ -25,13 +25,16 @@ const colors = {
   white: '#FFFFFF'
 };
 
-// Componente da Logo Oficial Data Frontier convertido de SVG para JSX
+// Componente da Logo Oficial Data Frontier convertido de SVG para JSX com otimizações de SEO/Acessibilidade
 const LogoDataFrontier = ({ className }) => (
   <svg
     viewBox="0 0 837.24402 837.24402"
     className={className}
     xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="Logotipo da Data Frontier"
   >
+    <title>Logo Data Frontier</title>
     <defs>
       <clipPath id="clipPath20" clipPathUnits="userSpaceOnUse">
         <path d="M 0,627.933 H 627.933 V 0 H 0 Z" />
@@ -80,7 +83,7 @@ const ContentBlock = ({ children, className, href, bgColor = colors.white, textC
   );
 
   return href ? (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="block w-full h-full transform hover:-translate-y-2 transition-transform duration-300">
+    <a href={href} className="block w-full h-full transform hover:-translate-y-2 transition-transform duration-300">
       {content}
     </a>
   ) : (
@@ -124,8 +127,6 @@ export default function App() {
     setStatus({ type: '', message: '' });
 
     try {
-      // Usa variável de ambiente do Vite no lugar da URL chumbada da Cloud Function
-      // No Cloud Storage (produção), você configurará essa variável durante o build.
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       const response = await fetch(`${apiUrl}/sendContactEmail`, {
         method: 'POST',
@@ -162,7 +163,8 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-2 leading-[1.1]" style={{ color: colors.dark }}>
-                data<br />frontier
+                <span className="sr-only">Data Frontier: Soluções Tecnológicas, IoT, Impressão 3D e Usinagem</span>
+                <span aria-hidden="true">data<br />frontier</span>
               </h1>
               <p className="text-sm font-bold tracking-widest uppercase mt-3 opacity-80" style={{ color: colors.dark }}>
                 Tecnologia única como você
@@ -176,9 +178,12 @@ export default function App() {
           </div>
         </ContentBlock>
 
+        {/* Título oculto para hierarquia de SEO */}
+        <h2 className="sr-only">Nossos Serviços e Soluções</h2>
+
         {/* 2. LINHA DE SERVIÇOS 1: Academy (Maior) e IoT (Menor) */}
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-3/5">
+          <div id="academy" className="w-full md:w-3/5">
             <ContentBlock href="#academy" bgColor={colors.blue} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
                 <GraduationCap className="w-8 h-8 text-white" />
@@ -195,7 +200,7 @@ export default function App() {
             </ContentBlock>
           </div>
 
-          <div className="w-full md:w-2/5">
+          <div id="iot" className="w-full md:w-2/5">
             <ContentBlock href="#iot" bgColor={colors.white}>
               <div className="p-4 rounded-2xl w-fit" style={{ backgroundColor: '#F0F3FF' }}>
                 <Satellite className="w-8 h-8" style={{ color: colors.blue }} />
@@ -212,7 +217,7 @@ export default function App() {
 
         {/* 3. LINHA DE SERVIÇOS 2: STL (Menor) e Resinas (Maior) */}
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-2/5 flex flex-col">
+          <div id="stl" className="w-full md:w-2/5 flex flex-col">
             <ContentBlock href="#stl" bgColor={colors.white}>
               <div className="p-4 rounded-2xl w-fit" style={{ backgroundColor: '#FFF5F2' }}>
                 <Box className="w-8 h-8" style={{ color: colors.rawhide }} />
@@ -226,7 +231,7 @@ export default function App() {
             </ContentBlock>
           </div>
 
-          <div className="w-full md:w-3/5">
+          <div id="materiais" className="w-full md:w-3/5">
             <ContentBlock href="#materiais" bgColor={colors.rawhide} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
                 <Droplet className="w-8 h-8 text-white" />
@@ -246,7 +251,7 @@ export default function App() {
 
         {/* 4. LINHA DE SERVIÇOS 3: Usinagem (Maior) e Robótica (Menor) */}
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-3/5">
+          <div id="usinagem" className="w-full md:w-3/5">
             <ContentBlock href="#usinagem" bgColor={colors.dark} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
                 <Wrench className="w-8 h-8 text-white" />
@@ -263,7 +268,7 @@ export default function App() {
             </ContentBlock>
           </div>
 
-          <div className="w-full md:w-2/5 flex flex-col">
+          <div id="robotica" className="w-full md:w-2/5 flex flex-col">
             <ContentBlock href="#robotica" bgColor={colors.white}>
               <div className="p-4 rounded-2xl w-fit" style={{ backgroundColor: '#F0F3FF' }}>
                 <Bot className="w-8 h-8" style={{ color: colors.blue }} />
@@ -280,7 +285,7 @@ export default function App() {
 
         {/* 5. REDES SOCIAIS */}
         <ContentBlock bgColor={colors.white} className="items-center text-center py-10">
-          <h3 className="text-2xl font-bold mb-6">Conecte-se com a Nossa Força</h3>
+          <h2 className="text-2xl font-bold mb-6">Conecte-se com a Nossa Força</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <SocialLink icon={Instagram} href="#" label="Instagram" />
             <SocialLink icon={Linkedin} href="#" label="LinkedIn" />
@@ -289,7 +294,7 @@ export default function App() {
           </div>
         </ContentBlock>
 
-        {/* 6. FORMULÁRIO DE CONTATO (Amplo e claro) */}
+        {/* 6. FORMULÁRIO DE CONTATO */}
         <ContentBlock bgColor={colors.white} className="border-t-4" style={{ borderTopColor: colors.blue }}>
           <div className="max-w-2xl mx-auto w-full text-center mb-8">
             <div className="w-16 h-16 rounded-full bg-[#F0F3FF] flex items-center justify-center mx-auto mb-6">
