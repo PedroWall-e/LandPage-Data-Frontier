@@ -25,7 +25,7 @@ const colors = {
   white: '#FFFFFF'
 };
 
-// Componente da Logo Oficial Data Frontier convertido de SVG para JSX com otimizações de SEO/Acessibilidade
+// Componente da Logo Oficial Data Frontier
 const LogoDataFrontier = ({ className }) => (
   <svg
     viewBox="0 0 837.24402 837.24402"
@@ -111,10 +111,13 @@ export default function App() {
     name: '',
     email: '',
     phone: '',
-    message: ''
+    message: '',
+    subject: '' // <-- Incluído o state para as tags
   });
   const [status, setStatus] = React.useState({ type: '', message: '' });
   const [loading, setLoading] = React.useState(false);
+
+  const subjects = ['Academy', 'IoT Satelital', 'STL Prime', 'Resinas 3D', 'Usinagem', 'Robótica', 'Outros'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -138,7 +141,7 @@ export default function App() {
 
       if (response.ok) {
         setStatus({ type: 'success', message: 'Mensagem enviada com sucesso! Entraremos em contato em breve.' });
-        setFormData({ name: '', email: '', phone: '', message: '' });
+        setFormData({ name: '', email: '', phone: '', message: '', subject: '' });
       } else {
         throw new Error('Falha ao enviar e-mail.');
       }
@@ -183,6 +186,7 @@ export default function App() {
 
         {/* 2. LINHA DE SERVIÇOS 1: Academy (Maior) e IoT (Menor) */}
         <div className="flex flex-col md:flex-row gap-6">
+          {/* Se quiser alterar o link do card Academy, basta mudar o href="#" abaixo */}
           <div id="academy" className="w-full md:w-3/5">
             <ContentBlock href="#academy" bgColor={colors.blue} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
@@ -289,8 +293,9 @@ export default function App() {
           <div className="flex flex-wrap justify-center gap-4">
             <SocialLink icon={Instagram} href="#" label="Instagram" />
             <SocialLink icon={Linkedin} href="#" label="LinkedIn" />
-            <SocialLink icon={Globe} href="#" label="Website" />
-            <SocialLink icon={MessageCircle} href="https://wa.me/5500000000000" label="WhatsApp" />
+            {/* Trocado Website para Corporativo */}
+            <SocialLink icon={Globe} href="#" label="Corporativo" />
+            <SocialLink icon={MessageCircle} href="https://wa.me/5531975280637" label="WhatsApp" />
           </div>
         </ContentBlock>
 
@@ -307,6 +312,26 @@ export default function App() {
           </div>
 
           <form className="max-w-3xl mx-auto w-full flex flex-col gap-5" onSubmit={handleSubmit}>
+            {/* Seção de Tags de Assunto adicionada */}
+            <div className="flex flex-col gap-2 mb-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Sobre qual assunto deseja falar?</label>
+              <div className="flex flex-wrap gap-2">
+                {subjects.map((sub) => (
+                  <button
+                    type="button"
+                    key={sub}
+                    onClick={() => setFormData(prev => ({ ...prev, subject: sub }))}
+                    className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${formData.subject === sub
+                        ? 'bg-[#3347FF] text-white border-[#3347FF]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#3347FF]'
+                      }`}
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-gray-700 ml-1">Nome Completo</label>
               <input
@@ -367,14 +392,17 @@ export default function App() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="w-full text-center py-6 text-sm text-gray-500 font-bold">
-        <p>© {new Date().getFullYear()} Data Frontier. Tecnologia única como você.</p>
+      {/* Footer atualizado com Endereço e Dados Cadastrais */}
+      <footer className="w-full text-center py-10 text-sm text-gray-500 font-medium flex flex-col gap-2">
+        <p className="font-bold text-gray-800">© {new Date().getFullYear()} Data Frontier. Tecnologia única como você.</p>
+        <p>CNPJ: 37.227.651/0001-29</p>
+        <p>Rua da Bahia, 504 - Sala 301 | Belo Horizonte, MG - Brasil - CEP 30160-015</p>
+        <p>Telefone: <a href="tel:+5531975280637" className="hover:text-[#3347FF] transition-colors">+55 31 97528-0637</a></p>
       </footer>
 
       {/* Botão Flutuante do WhatsApp */}
       <a
-        href="https://wa.me/5500000000000"
+        href="https://wa.me/5531975280637"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-xl hover:bg-[#20bd5a] hover:scale-110 hover:shadow-2xl transition-all duration-300 flex items-center justify-center group"
