@@ -117,6 +117,12 @@ export default function App() {
   const [status, setStatus] = React.useState({ type: '', message: '' });
   const [loading, setLoading] = React.useState(false);
 
+  // Estados para o Keypad do Admin
+  const [showKeypad, setShowKeypad] = React.useState(false);
+  const [keypadPassword, setKeypadPassword] = React.useState('');
+  const [keypadStatus, setKeypadStatus] = React.useState({ type: '', message: '' });
+  const [keypadLoading, setKeypadLoading] = React.useState(false);
+
   const subjects = ['Academy', 'IoT Satelital', 'STL Prime', 'Resinas 3D', 'Usinagem', 'Robótica', 'Outros'];
 
   const handleChange = (e) => {
@@ -150,6 +156,57 @@ export default function App() {
       setStatus({ type: 'error', message: 'Ocorreu um erro ao enviar sua mensagem. Por favor, tente novamente.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Funções do Keypad do Admin
+  const handleKeyPress = async (num) => {
+    if (keypadPassword.length >= 4 || keypadLoading) return;
+
+    const newPassword = keypadPassword + num;
+    setKeypadPassword(newPassword);
+
+    if (newPassword.length === 4) {
+      // Disparar envio ao atingir 4 dígitos
+      setKeypadLoading(true);
+      setKeypadStatus({ type: '', message: '' });
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        const response = await fetch(`${apiUrl}/admin/report?token=${newPassword}`);
+
+        if (response.ok) {
+          const text = await response.text();
+          setKeypadStatus({ type: 'success', message: text });
+          setTimeout(() => setShowKeypad(false), 3000); // Fecha após 3s
+        } else {
+          setKeypadStatus({ type: 'error', message: 'Senha incorreta ou erro.' });
+          setKeypadPassword('');
+        }
+      } catch (error) {
+        setKeypadStatus({ type: 'error', message: 'Erro de conexão.' });
+        setKeypadPassword('');
+      } finally {
+        setKeypadLoading(false);
+      }
+    }
+  };
+
+  const handleRecoverPassword = async () => {
+    setKeypadLoading(true);
+    setKeypadStatus({ type: '', message: '' });
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/admin/recoverPassword`, { method: 'POST' });
+
+      if (response.ok) {
+        setKeypadStatus({ type: 'success', message: 'Senha enviada para o email!' });
+      } else {
+        setKeypadStatus({ type: 'error', message: 'Erro ao recuperar senha.' });
+      }
+    } catch (error) {
+      setKeypadStatus({ type: 'error', message: 'Erro de conexão.' });
+    } finally {
+      setKeypadLoading(false);
     }
   };
 
@@ -322,8 +379,8 @@ export default function App() {
                     key={sub}
                     onClick={() => setFormData(prev => ({ ...prev, subject: sub }))}
                     className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${formData.subject === sub
-                        ? 'bg-[#3347FF] text-white border-[#3347FF]'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#3347FF]'
+                      ? 'bg-[#3347FF] text-white border-[#3347FF]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#3347FF]'
                       }`}
                   >
                     {sub}
@@ -413,6 +470,86 @@ export default function App() {
           Fale conosco!
         </span>
       </a>
+
+      {/* Botões Escondido de Admin e Painel do Keypad */}
+      <button
+        onClick={() => {
+          setShowKeypad(!showKeypad);
+          setKeypadPassword('');
+          setKeypadStatus({ type: '', message: '' });
+        }}
+        className="fixed top-1/2 left-0 transform -translate-y-1/2 z-50 p-2 opacity-10 hover:opacity-100 transition-opacity duration-300"
+        aria-label="Admin Tools"
+      >
+        <Bot className="w-8 h-8 text-gray-500 hover:text-[#3347FF]" />
+      </button>
+
+      {showKeypad && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setShowKeypad(false)}>
+          <div
+            className="bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-gray-800">Acesso Restrito</h3>
+              <p className="text-sm text-gray-500 mt-1">Digite a senha para enviar o relatório</p>
+            </div>
+
+            {/* Display da Senha (pontinhos para esconder o número real e visual) */}
+            <div className="flex justify-center gap-3 my-2">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-4 h-4 rounded-full transition-colors ${i < keypadPassword.length ? 'bg-[#3347FF]' : 'bg-gray-200'}`}
+                />
+              ))}
+            </div>
+
+            {/* Teclado Numérico */}
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                <button
+                  key={num}
+                  onClick={() => handleKeyPress(num.toString())}
+                  disabled={keypadLoading}
+                  className="bg-gray-50 hover:bg-[#3347FF] hover:text-white text-gray-800 font-bold text-xl py-4 rounded-2xl transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {num}
+                </button>
+              ))}
+              <div className="col-span-1"></div>
+              <button
+                onClick={() => handleKeyPress('0')}
+                disabled={keypadLoading}
+                className="bg-gray-50 hover:bg-[#3347FF] hover:text-white text-gray-800 font-bold text-xl py-4 rounded-2xl transition-colors shadow-sm disabled:opacity-50"
+              >
+                0
+              </button>
+              <button
+                onClick={() => setKeypadPassword(prev => prev.slice(0, -1))}
+                disabled={keypadLoading || keypadPassword.length === 0}
+                className="bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm py-4 rounded-2xl transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center"
+              >
+                Del
+              </button>
+            </div>
+
+            {keypadStatus.message && (
+              <div className={`p-3 rounded-xl text-center text-sm font-bold ${keypadStatus.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {keypadStatus.message}
+              </div>
+            )}
+
+            <button
+              onClick={handleRecoverPassword}
+              disabled={keypadLoading}
+              className="mt-2 text-[#3347FF] hover:underline text-sm font-semibold text-center w-full"
+            >
+              Recuperar senha (enviar ao email)
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

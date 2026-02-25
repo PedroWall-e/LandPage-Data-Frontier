@@ -92,7 +92,7 @@ app.post("/sendContactEmail", async (req, res) => {
  */
 app.get("/admin/report", async (req, res) => {
     // Camada básica de segurança para ninguém de fora disparar emails à toa
-    const secretToken = "datafrontier2026"; // Mude esta senha!
+    const secretToken = "6874"; // Nova senha de 4 dígitos
     if (req.query.token !== secretToken) {
         return res.status(401).send("Não autorizado.");
     }
@@ -142,6 +142,45 @@ app.get("/admin/report", async (req, res) => {
     } catch (error) {
         console.error("Erro ao gerar relatório:", error);
         return res.status(500).send("Erro interno ao gerar relatório.");
+    }
+});
+
+/**
+ * Endpoint Admin para recuperar a senha
+ * Envia a senha atual para o email do administrador
+ */
+app.post("/admin/recoverPassword", async (req, res) => {
+    try {
+        const EMAIL_USER = process.env.EMAIL_USER;
+        const secretToken = "6874"; // A mesma senha definida acima
+
+        if (!EMAIL_USER) {
+            return res.status(500).send({ success: false, error: "Erro na configuração de email do servidor." });
+        }
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+        });
+
+        const mailOptions = {
+            from: `"Data Frontier Admin" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,
+            subject: `Recuperação de Senha do Relatório Admin`,
+            html: `
+                <h3>Recuperação de Senha</h3>
+                <p>Foi solicitada a recuperação da senha de acesso ao relatório de contatos.</p>
+                <p>Sua senha atual é: <strong>${secretToken}</strong></p>
+                <br />
+                <p><em>Este é um e-mail automático da Landpage Data Frontier.</em></p>
+            `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        return res.status(200).send({ success: true, message: "Senha enviada para o e-mail do administrador." });
+    } catch (error) {
+        console.error("Erro ao recuperar senha:", error);
+        return res.status(500).send({ success: false, error: "Erro interno ao enviar e-mail de recuperação." });
     }
 });
 
