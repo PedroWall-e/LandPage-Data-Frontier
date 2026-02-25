@@ -41,7 +41,7 @@ app.post("/sendContactEmail", async (req, res) => {
             status: "new"
         };
 
-        await admin.firestore("ladepage-dataf").collection("contacts").add(contactData);
+        await admin.firestore().collection("contacts").add(contactData);
         console.log("Contato salvo no Firestore com sucesso.");
 
         // 2. Configurar o transportador de e-mail usando variáveis de ambiente
