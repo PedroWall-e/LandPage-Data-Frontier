@@ -20,3 +20,7 @@ steps:
     dir: 'frontend/dist'
     entrypoint: 'gsutil'
     args: ['-m', 'rsync', '-R', '.', 'gs://landpage-datafrontier']
+
+# --- ADICIONE ESTA PARTE PARA RESOLVER O ERRO ---
+options:
+  logging: CLOUD_LOGGING_ONLY
