@@ -72,18 +72,27 @@ const LogoDataFrontier = ({ className }) => (
 );
 
 // Componente de Bloco Flexível (Adapta ao conteúdo)
-const ContentBlock = ({ children, className, href, bgColor = colors.white, textColor = colors.dark }) => {
+const ContentBlock = ({ children, className, href, onClick, bgColor = colors.white, textColor = colors.dark }) => {
   const content = (
     <div
       className={`relative w-full rounded-3xl p-8 md:p-10 transition-all duration-300 shadow-sm hover:shadow-xl border border-black/5 flex flex-col gap-6 h-full ${className}`}
       style={{ backgroundColor: bgColor, color: textColor }}
+      onClick={onClick}
     >
       {children}
     </div>
   );
 
+  if (onClick && !href) {
+    return (
+      <button onClick={onClick} className="block w-full h-full text-left transform hover:-translate-y-2 transition-transform duration-300">
+        {content}
+      </button>
+    );
+  }
+
   return href ? (
-    <a href={href} className="block w-full h-full transform hover:-translate-y-2 transition-transform duration-300">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="block w-full h-full transform hover:-translate-y-2 transition-transform duration-300">
       {content}
     </a>
   ) : (
@@ -122,6 +131,9 @@ export default function App() {
   const [keypadPassword, setKeypadPassword] = React.useState('');
   const [keypadStatus, setKeypadStatus] = React.useState({ type: '', message: '' });
   const [keypadLoading, setKeypadLoading] = React.useState(false);
+
+  // Estado para o Modal de Robótica
+  const [showRoboticaModal, setShowRoboticaModal] = React.useState(false);
 
   const subjects = ['Academy', 'IoT Satelital', 'STL Prime', 'Resinas 3D', 'Usinagem', 'Robótica', 'Outros'];
 
@@ -245,7 +257,7 @@ export default function App() {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Se quiser alterar o link do card Academy, basta mudar o href="#" abaixo */}
           <div id="academy" className="w-full md:w-3/5">
-            <ContentBlock href="#academy" bgColor={colors.blue} textColor={colors.white}>
+            <ContentBlock href="https://frontierclass.com.br" bgColor={colors.blue} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
                 <GraduationCap className="w-8 h-8 text-white" />
               </div>
@@ -262,7 +274,7 @@ export default function App() {
           </div>
 
           <div id="iot" className="w-full md:w-2/5">
-            <ContentBlock href="#iot" bgColor={colors.white}>
+            <ContentBlock href="https://iotdata.com.br" bgColor={colors.white}>
               <div className="p-4 rounded-2xl w-fit" style={{ backgroundColor: '#F0F3FF' }}>
                 <Satellite className="w-8 h-8" style={{ color: colors.blue }} />
               </div>
@@ -279,7 +291,7 @@ export default function App() {
         {/* 3. LINHA DE SERVIÇOS 2: STL (Menor) e Resinas (Maior) */}
         <div className="flex flex-col md:flex-row gap-6">
           <div id="stl" className="w-full md:w-2/5 flex flex-col">
-            <ContentBlock href="#stl" bgColor={colors.white}>
+            <ContentBlock href="https://stlprime.com.br" bgColor={colors.white}>
               <div className="p-4 rounded-2xl w-fit" style={{ backgroundColor: '#FFF5F2' }}>
                 <Box className="w-8 h-8" style={{ color: colors.rawhide }} />
               </div>
@@ -293,7 +305,7 @@ export default function App() {
           </div>
 
           <div id="materiais" className="w-full md:w-3/5">
-            <ContentBlock href="#materiais" bgColor={colors.rawhide} textColor={colors.white}>
+            <ContentBlock href="https://datafrontier3d.com.br" bgColor={colors.rawhide} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
                 <Droplet className="w-8 h-8 text-white" />
               </div>
@@ -313,7 +325,7 @@ export default function App() {
         {/* 4. LINHA DE SERVIÇOS 3: Usinagem (Maior) e Robótica (Menor) */}
         <div className="flex flex-col md:flex-row gap-6">
           <div id="usinagem" className="w-full md:w-3/5">
-            <ContentBlock href="#usinagem" bgColor={colors.dark} textColor={colors.white}>
+            <ContentBlock href="https://datafr.com.br" bgColor={colors.dark} textColor={colors.white}>
               <div className="p-4 rounded-2xl bg-white/10 w-fit backdrop-blur-sm">
                 <Wrench className="w-8 h-8 text-white" />
               </div>
@@ -330,7 +342,7 @@ export default function App() {
           </div>
 
           <div id="robotica" className="w-full md:w-2/5 flex flex-col">
-            <ContentBlock href="#robotica" bgColor={colors.white}>
+            <ContentBlock onClick={() => setShowRoboticaModal(true)} bgColor={colors.white}>
               <div className="p-4 rounded-2xl w-fit" style={{ backgroundColor: '#F0F3FF' }}>
                 <Bot className="w-8 h-8" style={{ color: colors.blue }} />
               </div>
@@ -348,10 +360,10 @@ export default function App() {
         <ContentBlock bgColor={colors.white} className="items-center text-center py-10">
           <h2 className="text-2xl font-bold mb-6">Conecte-se com a Nossa Força</h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <SocialLink icon={Instagram} href="#" label="Instagram" />
-            <SocialLink icon={Linkedin} href="#" label="LinkedIn" />
+            <SocialLink icon={Instagram} href="https://www.instagram.com/datafrontier_?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" label="Instagram" />
+            <SocialLink icon={Linkedin} href="https://www.linkedin.com/company/data-frontier-br" label="LinkedIn" />
             {/* Trocado Website para Corporativo */}
-            <SocialLink icon={Globe} href="#" label="Corporativo" />
+            <SocialLink icon={Globe} href="https://datafr.com.br" label="Corporativo" />
             <SocialLink icon={MessageCircle} href="https://wa.me/5531975280637" label="WhatsApp" />
           </div>
         </ContentBlock>
@@ -546,6 +558,70 @@ export default function App() {
               className="mt-2 text-[#3347FF] hover:underline text-sm font-semibold text-center w-full"
             >
               Recuperar senha (enviar ao email)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showRoboticaModal && (
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowRoboticaModal(false)}>
+          <div
+            className="bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl max-w-2xl w-full flex flex-col gap-8 transform transition-all animate-in fade-in zoom-in duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <div className="w-20 h-20 rounded-3xl bg-[#F0F3FF] flex items-center justify-center mx-auto mb-6">
+                <Bot className="w-10 h-10" style={{ color: colors.blue }} />
+              </div>
+              <h3 className="text-3xl font-extrabold text-gray-800">Escolha o seu interesse em Robótica</h3>
+              <p className="text-gray-500 mt-2 font-medium">Selecione uma das áreas abaixo para prosseguir</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <a
+                href="https://datafr.com.br"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-4 p-8 rounded-3xl bg-gray-50 hover:bg-[#3347FF] transition-all duration-300 border border-gray-100 hover:border-[#3347FF] hover:-translate-y-2 shadow-sm hover:shadow-xl"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white/80 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <Wrench className="w-6 h-6 text-gray-700 group-hover:text-white" />
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold text-gray-800 group-hover:text-white">Robótica Industrial</h4>
+                  <p className="text-sm text-gray-500 group-hover:text-white/80 mt-1">Soluções avançadas para a indústria e processos produtivos.</p>
+                </div>
+                <div className="mt-auto pt-4 flex items-center text-[#3347FF] group-hover:text-white font-bold text-sm">
+                  <span>Acessar Portal</span>
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </a>
+
+              <a
+                href="https://datafrontier3d.com.br"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-4 p-8 rounded-3xl bg-gray-50 hover:bg-[#B2624F] transition-all duration-300 border border-gray-100 hover:border-[#B2624F] hover:-translate-y-2 shadow-sm hover:shadow-xl"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white/80 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <GraduationCap className="w-6 h-6 text-gray-700 group-hover:text-white" />
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold text-gray-800 group-hover:text-white">Robótica Educacional</h4>
+                  <p className="text-sm text-gray-500 group-hover:text-white/80 mt-1">Kits interativos e aprendizado prático para todas as idades.</p>
+                </div>
+                <div className="mt-auto pt-4 flex items-center text-[#B2624F] group-hover:text-white font-bold text-sm">
+                  <span>Acessar Portal</span>
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </a>
+            </div>
+
+            <button
+              onClick={() => setShowRoboticaModal(false)}
+              className="mt-2 text-gray-400 hover:text-gray-600 text-sm font-semibold text-center w-full transition-colors"
+            >
+              Fechar Visualização
             </button>
           </div>
         </div>
