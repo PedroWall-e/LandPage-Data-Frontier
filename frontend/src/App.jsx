@@ -12,7 +12,9 @@ import {
   Send,
   ArrowRight,
   Wrench,
-  Bot
+  Bot,
+  Cookie,
+  X
 } from 'lucide-react';
 
 // Cores da Marca baseadas no PDF
@@ -134,6 +136,28 @@ export default function App() {
 
   // Estado para o Modal de Robótica
   const [showRoboticaModal, setShowRoboticaModal] = React.useState(false);
+
+  // Estado para o Banner de Cookies
+  const [showCookieBanner, setShowCookieBanner] = React.useState(false);
+
+  React.useEffect(() => {
+    const consent = localStorage.getItem('cookieConsent');
+    if (!consent) {
+      // Pequeno timeout para não aparecer imediatamente no carregamento
+      const timer = setTimeout(() => setShowCookieBanner(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleAcceptCookies = () => {
+    localStorage.setItem('cookieConsent', 'accepted');
+    setShowCookieBanner(false);
+  };
+
+  const handleDeclineCookies = () => {
+    localStorage.setItem('cookieConsent', 'declined');
+    setShowCookieBanner(false);
+  };
 
   const subjects = ['Academy', 'IoT Satelital', 'STL Prime', 'Resinas 3D', 'Usinagem', 'Robótica', 'Outros'];
 
@@ -566,7 +590,7 @@ export default function App() {
       {showRoboticaModal && (
         <div className="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setShowRoboticaModal(false)}>
           <div
-            className="bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl max-w-2xl w-full flex flex-col gap-8 transform transition-all animate-in fade-in zoom-in duration-300"
+            className="bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl max-w-2xl w-full flex flex-col gap-8 transform transition-all animate-in fade-in zoom-in duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center">
@@ -623,6 +647,40 @@ export default function App() {
             >
               Fechar Visualização
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Banner de Cookies - Retangular e Centralizado no Rodapé */}
+      {showCookieBanner && (
+        <div className="fixed bottom-8 left-6 right-6 md:left-1/2 md:-translate-x-1/2 md:max-w-6xl w-full z-[100] animate-in fade-in slide-in-from-bottom-10 duration-700">
+          <div className="bg-white/90 backdrop-blur-lg rounded-[2rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-3xl bg-[#F0F3FF] flex items-center justify-center shrink-0 shadow-inner">
+                <Cookie className="w-9 h-9" style={{ color: colors.blue }} />
+              </div>
+              <div className="flex flex-col gap-1 text-center md:text-left">
+                <h4 className="text-2xl font-extrabold text-gray-800">Privacidade & Cookies</h4>
+                <p className="text-sm text-gray-500 leading-relaxed font-semibold max-w-2xl">
+                  Utilizamos tecnologias para personalizar sua jornada. Ao continuar, você concorda com nossa política de dados e cookies.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 w-full md:w-auto">
+              <button
+                onClick={handleAcceptCookies}
+                className="flex-1 md:flex-none bg-[#3347FF] text-white font-black py-4 px-12 rounded-2xl hover:opacity-90 hover:-translate-y-1 transition-all active:scale-95 shadow-xl shadow-blue-200 text-lg uppercase tracking-tight"
+              >
+                Aceitar
+              </button>
+              <button
+                onClick={handleDeclineCookies}
+                className="bg-gray-100 text-gray-600 font-bold py-4 px-8 rounded-2xl hover:bg-gray-200 transition-all active:scale-95 text-lg"
+              >
+                Recusar
+              </button>
+            </div>
           </div>
         </div>
       )}
