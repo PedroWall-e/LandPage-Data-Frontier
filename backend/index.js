@@ -69,8 +69,72 @@ app.post("/sendContactEmail", async (req, res) => {
             `,
         };
 
-        // 3. Enviar o e-mail
+        // 3. Enviar o e-mail para o administrador
         await transporter.sendMail(mailOptions);
+
+        // 4. Enviar e-mail de confirmação estilizado para o usuário com o visual da marca
+        const userMailOptions = {
+            from: `"Equipe Data Frontier" <${EMAIL_USER}>`,
+            to: email,
+            subject: `Recebemos sua mensagem, ${name}!`,
+            html: `
+            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F9F8F6; margin: 0; padding: 40px 20px; color: #2B2B2B;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border-radius: 24px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+                    
+                    <!-- Header -->
+                    <div style="background-color: #3347FF; padding: 40px 30px; text-align: center;">
+                        <div style="font-size: 32px; font-weight: 900; color: #FFFFFF; letter-spacing: -1px; line-height: 1.1;">
+                            data<br/>frontier
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 40px 40px;">
+                        <h2 style="color: #2B2B2B; font-size: 24px; margin-top: 0; margin-bottom: 20px;">Olá, ${name}!</h2>
+                        
+                        <p style="color: #4A4A4A; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                            Agradecemos muito por entrar em contato. É um prazer ter você aqui conosco na <strong>Data Frontier</strong>.
+                        </p>
+                        
+                        <div style="background-color: #F0F3FF; border-left: 4px solid #3347FF; padding: 20px 25px; border-radius: 0 12px 12px 0; margin: 30px 0;">
+                            <p style="margin: 0; color: #2B2B2B; font-weight: 600; font-size: 15px; line-height: 1.5;">
+                                Recebemos sua mensagem sobre <strong>${subject || "Tecnologia"}</strong> com sucesso!
+                            </p>
+                        </div>
+                        
+                        <p style="color: #4A4A4A; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                            Nossa equipe já foi notificada e retornará o contato o mais breve possível para o número ou e-mail informados. Vamos conversar e entender exatamente como podemos impulsionar seu projeto.
+                        </p>
+                        
+                        <p style="color: #2B2B2B; font-size: 16px; line-height: 1.6; margin: 0;">
+                            Um grande abraço,<br/>
+                            <strong>Equipe Data Frontier</strong>
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="background-color: #FFE3D6; padding: 30px 40px; text-align: center;">
+                        <p style="margin: 0; color: #2B2B2B; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                            Tecnologia única como você
+                        </p>
+                        <p style="margin: 15px 0 0 0;">
+                            <a href="https://datafrontier.com.br" target="_blank" style="color: #3347FF; text-decoration: none; font-weight: 700; font-size: 15px;">Acessar nosso site</a>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+            `,
+        };
+
+        // Envia o email de confirmação sem travar o processo principal em caso de erro individual
+        try {
+            await transporter.sendMail(userMailOptions);
+            console.log("E-mail de confirmação enviado para:", email);
+        } catch (confirmError) {
+            console.error("Erro ao enviar e-mail de confirmação para o usuário:", confirmError);
+            // Continua a execução para retornar sucesso do envio principal
+        }
 
         return res.status(200).send({
             success: true,
