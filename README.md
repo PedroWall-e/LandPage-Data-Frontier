@@ -22,9 +22,20 @@ O projeto foi dividido em dois sub-diretórios principais:
    ```bash
    npm install
    ```
-3. Inicie o servidor:
+3. **Pré-requisitos Opcionais (para testar envio de emails e Firestore):**
+   *   **E-mail:** Para enviar e-mails via Gmail, você precisará gerar uma **Senha de Aplicativo (App Password)** na sua conta Google. Exporte no seu terminal ou inclua em um `.env`:
+       ```bash
+       export EMAIL_USER="seu-email@gmail.com"
+       export EMAIL_PASS="sua-senha-de-app"
+       ```
+   *   **Banco de Dados (Firestore):** O sistema utiliza o Firebase Admin SDK com credenciais padrão (`admin.initializeApp()`). Para rodar localmente e acessar o banco, instale o `gcloud CLI`, faça login e configure as credenciais da aplicação:
+       ```bash
+       gcloud auth application-default login
+       gcloud config set project SEU_PROJETO_GCP
+       ```
+       *(Certifique-se de que o Firestore Database esteja criado na aba "Firestore Database" do console do Google Cloud).*
+4. Inicie o servidor:
    ```bash
-   # Opcional: Para testar as funcionalidades completas, exporte as variáveis de ambiente EMAIL_USER e EMAIL_PASS.
    npm start
    ```
    *A API estará escutando na porta 8080 (ou na porta definida por `PORT`).*
@@ -74,3 +85,15 @@ O Cloud Run é ideal para rodar containers sem se preocupar com infraestrutura.
 3. Envie a pasta `frontend/dist` para um bucket do Cloud Storage configurado para hospedagem de sites estáticos.
    *   *Dica: Você pode arrastar os arquivos no Console do Storage, ou usar comando `gsutil rsync -R dist/ gs://SEU_BUCKET`*
 4. No bucket do Google Cloud Storage, certifique-se de configurar a **Página Principal** como `index.html` e as permissões de acesso público.
+
+---
+
+## 🔒 Painel Administrativo Oculto
+
+A landing page possui uma funcionalidade oculta para os administradores, que permite gerar e receber um relatório dos contatos diretamente no e-mail corporativo:
+
+*   **O Ícone do Robô:** No lado esquerdo da tela (no meio da página), há um ícone de um robô quase transparente. Ao clicar nele, um painel numérico de acesso restrito será aberto na tela.
+*   **Senha de Acesso:** A senha configurada para enviar o relatório de contatos é **`6874`**.
+*   **Como Funciona:** Digite a senha no teclado numérico exibido (como em um caixa eletrônico). Ao digitar os 4 dígitos corretamente, o sistema compilará todos os leads salvos no banco de dados e enviará um relatório completo por e-mail para o administrador logado (usando a variável de ambiente `EMAIL_USER`).
+*   **Recuperação de Senha:** Caso esqueça a senha, basta abrir o painel oculto no ícone do robô e clicar na opção "Recuperar senha". O sistema enviará a senha atual de quatro dígitos por e-mail, garantindo que o acesso permaneça seguro.
+
