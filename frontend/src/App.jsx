@@ -653,30 +653,30 @@ export default function App() {
 
       {/* Banner de Cookies - Retangular e Centralizado no Rodapé */}
       {showCookieBanner && (
-        <div className="fixed bottom-8 left-6 right-6 md:left-1/2 md:-translate-x-1/2 md:max-w-6xl w-full z-[100] animate-in fade-in slide-in-from-bottom-10 duration-700">
-          <div className="bg-white/90 backdrop-blur-lg rounded-[2rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 rounded-3xl bg-[#F0F3FF] flex items-center justify-center shrink-0 shadow-inner">
-                <Cookie className="w-9 h-9" style={{ color: colors.blue }} />
+        <div className="fixed bottom-4 left-4 right-4 md:bottom-8 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-full md:max-w-6xl z-[100] animate-in fade-in slide-in-from-bottom-10 duration-700">
+          <div className="bg-white/90 backdrop-blur-lg rounded-[2rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
+            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-[#F0F3FF] flex items-center justify-center shrink-0 shadow-inner">
+                <Cookie className="w-7 h-7 md:w-9 md:h-9" style={{ color: colors.blue }} />
               </div>
               <div className="flex flex-col gap-1 text-center md:text-left">
-                <h4 className="text-2xl font-extrabold text-gray-800">Privacidade & Cookies</h4>
+                <h4 className="text-xl md:text-2xl font-extrabold text-gray-800">Privacidade & Cookies</h4>
                 <p className="text-sm text-gray-500 leading-relaxed font-semibold max-w-2xl">
                   Utilizamos tecnologias para personalizar sua jornada. Ao continuar, você concorda com nossa política de dados e cookies.
                 </p>
               </div>
             </div>
 
-            <div className="flex gap-4 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-2 md:mt-0">
               <button
                 onClick={handleAcceptCookies}
-                className="flex-1 md:flex-none bg-[#3347FF] text-white font-black py-4 px-12 rounded-2xl hover:opacity-90 hover:-translate-y-1 transition-all active:scale-95 shadow-xl shadow-blue-200 text-lg uppercase tracking-tight"
+                className="w-full sm:w-auto bg-[#3347FF] text-white font-black py-3 px-8 md:py-4 md:px-12 rounded-2xl hover:opacity-90 hover:-translate-y-1 transition-all active:scale-95 shadow-xl shadow-blue-200 text-base md:text-lg uppercase tracking-tight"
               >
                 Aceitar
               </button>
               <button
                 onClick={handleDeclineCookies}
-                className="bg-gray-100 text-gray-600 font-bold py-4 px-8 rounded-2xl hover:bg-gray-200 transition-all active:scale-95 text-lg"
+                className="w-full sm:w-auto bg-gray-100 text-gray-600 font-bold py-3 px-8 md:py-4 rounded-2xl hover:bg-gray-200 transition-all active:scale-95 text-base md:text-lg"
               >
                 Recusar
               </button>
