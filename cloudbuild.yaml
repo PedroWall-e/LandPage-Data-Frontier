@@ -5,22 +5,21 @@ steps:
     entrypoint: 'npm'
     args: ['install']
 
-  # 2. Fazer o build do Vite injetando a URL da sua API do Cloud Run
+  # 2. Fazer o build do Next.js injetando a URL da sua API do Cloud Run
   - name: 'node:22-alpine'
     dir: 'frontend'
     entrypoint: 'sh'
     args:
       - '-c'
       - |
-        export VITE_API_URL=https://landpage-data-frontier-591324475631.europe-west1.run.app
+        export NEXT_PUBLIC_API_URL=https://landpage-data-frontier-591324475631.europe-west1.run.app
         npm run build
 
-  # 3. Sincronizar (enviar) a pasta dist gerada para o seu Bucket no Cloud Storage
+  # 3. Sincronizar (enviar) a pasta out gerada para o seu Bucket no Cloud Storage
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    dir: 'frontend/dist'
+    dir: 'frontend/out'
     entrypoint: 'gsutil'
     args: ['-m', 'rsync', '-R', '.', 'gs://landpage-datafrontier']
 
-# --- ADICIONE ESTA PARTE PARA RESOLVER O ERRO ---
 options:
   logging: CLOUD_LOGGING_ONLY
