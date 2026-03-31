@@ -9,7 +9,7 @@ COPY package*.json ./
 
 # Instalar compiladores pro node-gyp no ARM64 e ignorar lockfile de cross-platform
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
-RUN rm -f package-lock.json && npm install --omit=dev
+RUN rm -f package-lock.json && npm install --omit=dev --legacy-peer-deps
 
 # Copy local code to the container image.
 COPY . .

@@ -8,7 +8,7 @@ COPY package*.json ./
 
 # Instalar compiladores nativos caso Next.js / ARM64 precise, e ignorar lockfile do Windows
 RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
-RUN rm -f package-lock.json && npm install
+RUN rm -f package-lock.json && npm install --legacy-peer-deps
 
 # Copiar o resto do código
 COPY . .
