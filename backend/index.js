@@ -13,35 +13,41 @@ app.use(express.json());
 let pool;
 
 async function executeDbSetup() {
-    try {
-        pool = mysql.createPool({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASS,
-            database: process.env.DB_NAME,
-            waitForConnections: true,
-            connectionLimit: 10,
-            queueLimit: 0
-        });
+    pool = mysql.createPool({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASS,
+        database: process.env.DB_NAME,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    });
 
-        // Testa a conexão e garante que a tabela principal exista
-        const connection = await pool.getConnection();
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS contacts (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                phone VARCHAR(50),
-                message TEXT,
-                subject VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status VARCHAR(50) DEFAULT 'new'
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        `);
-        connection.release();
-        console.log("Banco de dados MySQL conectado e API pronta!");
-    } catch (err) {
-        console.error("Falha Crítica: Não foi possível conectar ao banco MySQL ou configurar a tabela:", err);
+    let retries = 6;
+    while (retries > 0) {
+        try {
+            // Testa a conexão e garante que a tabela principal exista
+            const connection = await pool.getConnection();
+            await connection.execute(`
+                CREATE TABLE IF NOT EXISTS contacts (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    phone VARCHAR(50),
+                    message TEXT,
+                    subject VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    status VARCHAR(50) DEFAULT 'new'
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            `);
+            connection.release();
+            console.log("Banco de dados MySQL conectado e tabela validada com sucesso!");
+            break;
+        } catch (err) {
+            console.warn(`⏳ MySQL iniciando (Acesso recusado no momento). Tentando novamente em 5 segundos... (Restam ${retries - 1} tentativas)`);
+            retries -= 1;
+            await new Promise(res => setTimeout(res, 5000));
+        }
     }
 }
 executeDbSetup();
