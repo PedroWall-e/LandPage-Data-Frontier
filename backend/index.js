@@ -1,10 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
-
-// Inicializa o Admin SDK (Usa Application Default Credentials no Google Cloud)
-admin.initializeApp();
+const mysql = require("mysql2/promise");
 
 const app = express();
 
@@ -12,8 +9,45 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
+// Configuração do Banco de Dados MySQL (Pool de Conexões)
+let pool;
+
+async function executeDbSetup() {
+    try {
+        pool = mysql.createPool({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASS,
+            database: process.env.DB_NAME,
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
+        });
+
+        // Testa a conexão e garante que a tabela principal exista
+        const connection = await pool.getConnection();
+        await connection.execute(`
+            CREATE TABLE IF NOT EXISTS contacts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                phone VARCHAR(50),
+                message TEXT,
+                subject VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status VARCHAR(50) DEFAULT 'new'
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+        connection.release();
+        console.log("Banco de dados MySQL conectado e API pronta!");
+    } catch (err) {
+        console.error("Falha Crítica: Não foi possível conectar ao banco MySQL ou configurar a tabela:", err);
+    }
+}
+executeDbSetup();
+
 /**
- * Endpoint para receber o contato, salvar no Firestore e enviar por email
+ * Endpoint para receber o contato, salvar no banco MySQL e enviar por email
  */
 app.post("/sendContactEmail", async (req, res) => {
     const EMAIL_USER = process.env.EMAIL_USER;
@@ -21,7 +55,7 @@ app.post("/sendContactEmail", async (req, res) => {
 
     if (!EMAIL_USER || !EMAIL_PASS) {
         console.error("Missing EMAIL_USER or EMAIL_PASS environment variables.");
-        return res.status(500).send({ success: false, error: "Erro de configuração no servidor." });
+        return res.status(500).send({ success: false, error: "Erro de configuração no servidor de e-mail." });
     }
 
     const { name, email, phone, message, subject } = req.body;
@@ -31,19 +65,20 @@ app.post("/sendContactEmail", async (req, res) => {
     }
 
     try {
-        // 1. Salvar no Firestore
-        const contactData = {
-            name,
-            email,
-            phone: phone || "Não informado",
-            message: message || "Sem mensagem",
-            subject: subject || "Não especificado", // <-- Nova linha
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            status: "new"
-        };
+        // 1. Salvar no Banco de Dados MySQL
+        const safePhone = phone || "Não informado";
+        const safeMessage = message || "Sem mensagem";
+        const safeSubject = subject || "Não especificado";
 
-        await admin.firestore().collection("contacts").add(contactData);
-        console.log("Contato salvo no Firestore com sucesso.");
+        if (pool) {
+            await pool.execute(
+                `INSERT INTO contacts (name, email, phone, message, subject) VALUES (?, ?, ?, ?, ?)`,
+                [name, email, safePhone, safeMessage, safeSubject]
+            );
+            console.log("Contato salvo no banco de dados MySQL com sucesso.");
+        } else {
+            console.warn("Conexão MySQL nula no momento do INSERT, log de memória ativado...");
+        }
 
         // 2. Configurar o transportador de e-mail usando variáveis de ambiente
         const transporter = nodemailer.createTransport({
@@ -62,10 +97,11 @@ app.post("/sendContactEmail", async (req, res) => {
                 <h3>Novo contato via Landpage</h3>
                 <p><strong>Nome:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Telefone:</strong> ${phone}</p>
-                <p><strong>Assunto de Interesse:</strong> ${subject || "Não especificado"}</p> <p><strong>Mensagem:</strong> ${message || "Sem mensagem"}</p>
+                <p><strong>Telefone:</strong> ${safePhone}</p>
+                <p><strong>Assunto de Interesse:</strong> ${safeSubject}</p> 
+                <p><strong>Mensagem:</strong> ${safeMessage}</p>
                 <hr>
-                <p><em>Este dado também foi registrado no seu Banco de Dados (Firestore).</em></p>
+                <p><em>Este lead foi armazenado no banco de dados central (MySQL).</em></p>
             `,
         };
 
@@ -107,7 +143,7 @@ app.post("/sendContactEmail", async (req, res) => {
                         
                         <div style="background-color: #F0F3FF; border-left: 4px solid #3347FF; padding: 20px 25px; border-radius: 0 12px 12px 0; margin: 30px 0;">
                             <p style="margin: 0; color: #2B2B2B; font-weight: 600; font-size: 15px; line-height: 1.5;">
-                                Recebemos sua mensagem sobre <strong>${subject || "Tecnologia"}</strong> com sucesso!
+                                Recebemos sua mensagem sobre <strong>${safeSubject}</strong> com sucesso!
                             </p>
                         </div>
                         
@@ -147,7 +183,6 @@ app.post("/sendContactEmail", async (req, res) => {
             console.log("E-mail de confirmação enviado para:", email);
         } catch (confirmError) {
             console.error("Erro ao enviar e-mail de confirmação para o usuário:", confirmError);
-            // Continua a execução para retornar sucesso do envio principal
         }
 
         return res.status(200).send({
@@ -165,41 +200,44 @@ app.post("/sendContactEmail", async (req, res) => {
 });
 
 /**
- * Endpoint Admin para gerar e enviar relatório de contatos
+ * Endpoint Admin para gerar e enviar relatório de contatos usando o banco MySQL
  * Uso: Acesse /admin/report?token=SENHA_AQUI
  */
 app.get("/admin/report", async (req, res) => {
-    // Camada de segurança: token definido em variável de ambiente ADMIN_TOKEN
     const secretToken = process.env.ADMIN_TOKEN;
     if (!secretToken) {
         console.error("ADMIN_TOKEN environment variable is not set.");
-        return res.status(500).send("Erro de configuração no servidor.");
+        return res.status(500).send("Erro de configuração de segurança do servidor.");
     }
     if (req.query.token !== secretToken) {
         return res.status(401).send("Não autorizado.");
     }
 
     try {
-        // 1. Buscar todos os contatos no Firestore
-        const contactsSnapshot = await admin.firestore().collection("contacts").orderBy("createdAt", "desc").get();
+        if (!pool) {
+            return res.status(500).send("Pool do banco de dados MySQL não inicializado.");
+        }
 
-        if (contactsSnapshot.empty) {
+        // 1. Buscar todos os contatos no MySQL (ordenados do último para o primeiro)
+        const [rows] = await pool.query("SELECT * FROM contacts ORDER BY created_at DESC");
+
+        if (!rows || rows.length === 0) {
             return res.status(200).send("Nenhum contato encontrado no banco de dados.");
         }
 
         // 2. Montar o texto do relatório
         let reportHtml = "<h2>Relatório de Contatos - Data Frontier</h2><hr/>";
 
-        contactsSnapshot.forEach(doc => {
-            const data = doc.data();
-            const dataData = data.createdAt ? data.createdAt.toDate().toLocaleDateString('pt-BR') : 'Data desconhecida';
+        rows.forEach(c => {
+            const dataObj = c.created_at ? new Date(c.created_at) : new Date();
+            const dataData = dataObj.toLocaleDateString('pt-BR');
 
             reportHtml += `
                 <p><strong>Data:</strong> ${dataData}</p>
-                <p><strong>Nome:</strong> ${data.name}</p>
-                <p><strong>Email:</strong> ${data.email}</p>
-                <p><strong>Telefone:</strong> ${data.phone}</p>
-                <p><strong>Interesse:</strong> ${data.subject || "N/A"}</p>
+                <p><strong>Nome:</strong> ${c.name}</p>
+                <p><strong>Email:</strong> ${c.email}</p>
+                <p><strong>Telefone:</strong> ${c.phone}</p>
+                <p><strong>Interesse:</strong> ${c.subject || "N/A"}</p>
                 <hr/>
             `;
         });
@@ -212,24 +250,23 @@ app.get("/admin/report", async (req, res) => {
 
         const mailOptions = {
             from: `"Data Frontier Admin" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER, // Envia para o próprio dono
-            subject: `Relatório de Leads/Contatos (${contactsSnapshot.size} encontrados)`,
+            to: process.env.EMAIL_USER, // Envia para o próprio dono do serviço
+            subject: `Relatório de Leads/Contatos MySQL (${rows.length} encontrados)`,
             html: reportHtml,
         };
 
         await transporter.sendMail(mailOptions);
 
-        return res.status(200).send("Relatório gerado e enviado para o seu e-mail com sucesso!");
+        return res.status(200).send("Relatório gerado via MySQL e enviado para o seu e-mail com sucesso!");
 
     } catch (error) {
-        console.error("Erro ao gerar relatório:", error);
-        return res.status(500).send("Erro interno ao gerar relatório.");
+        console.error("Erro ao gerar relatório MySQL:", error);
+        return res.status(500).send("Erro interno ao gerar relatório no banco de dados.");
     }
 });
 
 /**
- * Endpoint Admin para recuperar a senha
- * Envia a senha atual para o email do administrador
+ * Endpoint Admin para recuperar a senha Mestra
  */
 app.post("/admin/recoverPassword", async (req, res) => {
     try {
@@ -253,25 +290,23 @@ app.post("/admin/recoverPassword", async (req, res) => {
             to: process.env.EMAIL_USER,
             subject: `Recuperação de Senha do Relatório Admin`,
             html: `
-                <h3>Recuperação de Senha</h3>
-                <p>Foi solicitada a recuperação da senha de acesso ao relatório de contatos.</p>
-                <p>Sua senha atual está definida na variável de ambiente <strong>ADMIN_TOKEN</strong> do Cloud Run.</p>
-                <p>Acesse o Console do GCP → Cloud Run → Variáveis de Ambiente para verificá-la.</p>
+                <h3>Recuperação de Senha Mestra</h3>
+                <p>Foi solicitada a recuperação da senha de acesso ao relatório de contatos do Banco da Dados.</p>
+                <p>Sua senha atual está definida nas Variáveis de Ambiente do Portainer como <strong>ADMIN_TOKEN</strong>.</p>
                 <br />
                 <p><em>Este é um e-mail automático da Landpage Data Frontier.</em></p>
             `,
         };
 
         await transporter.sendMail(mailOptions);
-        return res.status(200).send({ success: true, message: "Senha enviada para o e-mail do administrador." });
+        return res.status(200).send({ success: true, message: "Instruções enviadas para o e-mail do administrador designado." });
     } catch (error) {
-        console.error("Erro ao recuperar senha:", error);
-        return res.status(500).send({ success: false, error: "Erro interno ao enviar e-mail de recuperação." });
+        console.error("Erro ao recuperar senha admin:", error);
+        return res.status(500).send({ success: false, error: "Erro interno no servidor de remessas." });
     }
 });
 
-// Cloud Run requires listening on process.env.PORT, default to 8080
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-    console.log(`Contacts API listening on port ${port}`);
+    console.log(`API de Contatos ouvindo na porta ${port} [Modo de Persistência: MySQL Pool]`);
 });

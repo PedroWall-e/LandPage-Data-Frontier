@@ -14,6 +14,10 @@ services:
       - EMAIL_USER
       - EMAIL_PASS
       - ADMIN_TOKEN
+      - DB_HOST
+      - DB_USER
+      - DB_PASS
+      - DB_NAME
     networks:
       - app-network
 
