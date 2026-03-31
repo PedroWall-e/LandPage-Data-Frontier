@@ -1,26 +1,49 @@
 version: '3.8'
 
 services:
+  # -----------------------------------------------------------------------------------------------
+  # Bando de Dados Central - Hospedado internamente pela Stack (Otimizado ARM64 e RAM)
+  # -----------------------------------------------------------------------------------------------
+  db:
+    image: mariadb:10.11
+    container_name: data-frontier-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=senha_super_segura_do_banco_123
+      - MYSQL_DATABASE=data_frontier_db
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  # -----------------------------------------------------------------------------------------------
+  # Backend Node.js
+  # -----------------------------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: data-frontier-backend
     restart: unless-stopped
-    # O backend só será acessível pela rede interna do docker (pelo frontend/Nginx)
-    # ports:
-    #   - "8080:8080"
+    depends_on:
+      - db
     environment:
+      # Trava Portainer: E-mail e Admin Token. Estas você preenche na interface "Environment Variables"
       - EMAIL_USER
       - EMAIL_PASS
       - ADMIN_TOKEN
-      - DB_HOST
-      - DB_USER
-      - DB_PASS
-      - DB_NAME
+      
+      # Conexões amarradas automaticamente ao container "db" acima (evita Erro de Rede)
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=senha_super_segura_do_banco_123
+      - DB_NAME=data_frontier_db
     networks:
       - app-network
 
+  # -----------------------------------------------------------------------------------------------
+  # Frontend Next.js (com Nginx Proxy)
+  # -----------------------------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
@@ -28,7 +51,7 @@ services:
     container_name: data-frontier-frontend
     restart: unless-stopped
     ports:
-      - "3000:80" # Frontend Web responderá na porta alternativa 3000 (R. Pi Interno: 80)
+      - "3000:80" # Frontend Web responderá na porta 3000 no R.Pi
     depends_on:
       - backend
     networks:
