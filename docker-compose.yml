@@ -10,9 +10,9 @@ services:
     # Expor a porta 8080 só é necessário se você quiser acessar o backend por fora do portainer
     # Deixei mapeado para facilitar os testes iniciais, mas no futuro pode ser comentado
     ports:
-      - "8080:8080" 
-    # env_file:
-    #   - ./backend/.env # Descomente se for usar arquivo .env ou configure variáveis direto no portainer
+      - "8080:8080"
+    env_file:
+      - ./.env
     networks:
       - app-network
 
