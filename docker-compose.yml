@@ -11,8 +11,10 @@ services:
     # Deixei mapeado para facilitar os testes iniciais, mas no futuro pode ser comentado
     ports:
       - "8080:8080"
-    env_file:
-      - ./.env
+    environment:
+      - EMAIL_USER
+      - EMAIL_PASS
+      - ADMIN_TOKEN
     networks:
       - app-network
 
