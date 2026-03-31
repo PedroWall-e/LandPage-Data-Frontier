@@ -1,5 +1,5 @@
-# Use the official lightweight Node.js image
-FROM node:22-alpine
+# Use the official lightweight Node.js image (debian slim resolves musl/glibc issues)
+FROM node:22-slim
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app

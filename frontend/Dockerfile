@@ -1,5 +1,5 @@
-# Estágio 1: Build da aplicação Next.js
-FROM node:22-alpine AS builder
+# Estágio 1: Build da aplicação Next.js (Debian slim garante compatibilidade com compiladores/ARM64)
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
